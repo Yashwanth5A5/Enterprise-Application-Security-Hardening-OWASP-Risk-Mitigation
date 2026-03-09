@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Employees{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-people me-2 text-warning"></i>Employee Directory</h1>
+        <div class="text-muted" style="font-size:0.82rem; margin-top:3px;">
+            {{ employees|length }} employee(s) found
+        </div>
+    </div>
+    <a href="{{ url_for('employees.add_employee') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-person-plus me-1"></i>Add Employee
+    </a>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="card mb-4">
+    <div class="card-body py-2">
+        <form method="GET" action="{{ url_for('employees.list_employees') }}"
+              class="d-flex flex-wrap gap-2 align-items-center">
+            <div class="search-bar flex-grow-1">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text" name="q" class="form-control"
+                           placeholder="Search by name, email, or job title…"
+                           value="{{ search_query }}" />
+                </div>
+            </div>
+            <div>
+                <select name="department" class="form-select form-select-sm" style="min-width:160px;">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.name }}" {{ 'selected' if dept_filter == dept.name }}>
+                        {{ dept.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+            {% if search_query or dept_filter %}
+            <a href="{{ url_for('employees.list_employees') }}" class="btn btn-outline-secondary btn-sm">
+                Clear
+            </a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Employee Table -->
+<div class="card">
+    <div class="card-body p-0">
+        {% if employees %}
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th style="width:40px;">#</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Job Title</th>
+                    <th>Department</th>
+                    <th>Hire Date</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr>
+                    <td class="text-muted" style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;">
+                        {{ emp.id }}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('employees.view_employee', employee_id=emp.id) }}"
+                           class="text-decoration-none fw-semibold text-dark">
+                            {{ emp.full_name }}
+                        </a>
+                    </td>
+                    <td class="text-muted" style="font-size:0.85rem;">{{ emp.email }}</td>
+                    <td>{{ emp.job_title or '—' }}</td>
+                    <td>
+                        {% if emp.department %}
+                        <span class="badge" style="background:#e8f0fe; color:#1a3a6b; font-weight:500; font-size:0.76rem;">
+                            {{ emp.department.name }}
+                        </span>
+                        {% else %}<span class="text-muted">—</span>{% endif %}
+                    </td>
+                    <td style="font-size:0.85rem;">
+                        {{ emp.hire_date.strftime('%b %d, %Y') if emp.hire_date else '—' }}
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('employees.view_employee', employee_id=emp.id) }}"
+                           class="btn btn-outline-secondary btn-sm" title="View">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{{ url_for('employees.edit_employee', employee_id=emp.id) }}"
+                           class="btn btn-outline-primary btn-sm" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        {% if current_user.is_admin() %}
+                        <form method="POST"
+                              action="{{ url_for('employees.delete_employee', employee_id=emp.id) }}"
+                              class="d-inline"
+                              onsubmit="return confirm('Remove {{ emp.full_name }} from the system?')">
+                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-people" style="font-size:2.5rem; display:block; margin-bottom:0.75rem;"></i>
+            No employees found.
+            {% if search_query or dept_filter %}
+            <a href="{{ url_for('employees.list_employees') }}">Clear filters</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

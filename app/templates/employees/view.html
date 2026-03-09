@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}{{ employee.full_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-person-badge me-2 text-warning"></i>{{ employee.full_name }}</h1>
+        <nav class="breadcrumb mb-0">
+            <a href="{{ url_for('employees.list_employees') }}" class="text-muted text-decoration-none">
+                Employees
+            </a>
+            <span class="mx-2">/</span>
+            <span>{{ employee.full_name }}</span>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('employees.edit_employee', employee_id=employee.id) }}"
+           class="btn btn-primary btn-sm">
+            <i class="bi bi-pencil me-1"></i>Edit
+        </a>
+        {% if current_user.is_admin() %}
+        <form method="POST"
+              action="{{ url_for('employees.delete_employee', employee_id=employee.id) }}"
+              onsubmit="return confirm('Remove this employee?')">
+            <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-trash me-1"></i>Delete
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Profile Card -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center py-4">
+                <div style="width:72px; height:72px; border-radius:50%; background:#e8f0fe;
+                            display:flex; align-items:center; justify-content:center;
+                            margin:0 auto 1rem; font-size:1.8rem; color:#1a3a6b;">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <h5 class="mb-0 fw-600">{{ employee.full_name }}</h5>
+                <div class="text-muted" style="font-size:0.85rem; margin-top:4px;">
+                    {{ employee.job_title or 'No title assigned' }}
+                </div>
+                {% if employee.department %}
+                <span class="badge mt-2" style="background:#e8f0fe; color:#1a3a6b; font-weight:500;">
+                    {{ employee.department.name }}
+                </span>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-white" style="font-size:0.8rem; color:#6b7280;">
+                <div class="d-flex justify-content-between mb-1">
+                    <span>Employee ID</span>
+                    <code>#{{ employee.id }}</code>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span>Status</span>
+                    <span class="badge {{ 'bg-success' if employee.is_active else 'bg-secondary' }}">
+                        {{ 'Active' if employee.is_active else 'Inactive' }}
+                    </span>
+                </div>
+                {% if employee.hire_date %}
+                <div class="d-flex justify-content-between">
+                    <span>Hired</span>
+                    <span>{{ employee.hire_date.strftime('%b %d, %Y') }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Card -->
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header">
+                <i class="bi bi-info-circle me-2 text-warning"></i>Employee Details
+            </div>
+            <div class="card-body">
+                <div class="row g-3" style="font-size:0.875rem;">
+                    <div class="col-sm-6">
+                        <div class="text-muted mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">Email</div>
+                        <div>{{ employee.email }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">Phone</div>
+                        <div>{{ employee.phone or '—' }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">Job Title</div>
+                        <div>{{ employee.job_title or '—' }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">Department</div>
+                        <div>{{ employee.department.name if employee.department else '—' }}</div>
+                    </div>
+                    {% if current_user.is_admin() %}
+                    <div class="col-sm-6">
+                        <div class="text-muted mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">
+                            Salary <span class="badge bg-danger" style="font-size:0.62rem;">ADMIN</span>
+                        </div>
+                        <div>${{ "{:,.0f}".format(employee.salary) if employee.salary else '—' }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="col-sm-6">
+                        <div class="text-muted mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">Hire Date</div>
+                        <div>{{ employee.hire_date.strftime('%B %d, %Y') if employee.hire_date else '—' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- File Upload Section -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-paperclip me-2 text-warning"></i>Documents & Files</span>
+                <span class="badge bg-secondary">{{ employee.files|length }} file(s)</span>
+            </div>
+            <div class="card-body">
+                <!-- Upload Form -->
+                <form method="POST"
+                      action="{{ url_for('files.upload_file', employee_id=employee.id) }}"
+                      enctype="multipart/form-data"
+                      class="d-flex gap-2 align-items-center mb-3">
+                    <input type="file" name="file" class="form-control form-control-sm" required
+                           accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" />
+                    <button type="submit" class="btn btn-sm btn-primary flex-shrink-0">
+                        <i class="bi bi-upload me-1"></i>Upload
+                    </button>
+                </form>
+                <div class="text-muted" style="font-size:0.75rem; margin-bottom:0.75rem;">
+                    Allowed: PDF, PNG, JPG, DOC, DOCX — Max 16 MB
+                </div>
+
+                <!-- File List -->
+                {% if employee.files %}
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Filename</th>
+                            <th>Type</th>
+                            <th>Size</th>
+                            <th>Uploaded</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in employee.files %}
+                        <tr>
+                            <td style="font-size:0.82rem;">{{ f.original_filename }}</td>
+                            <td><span class="badge bg-secondary" style="font-size:0.7rem;">{{ f.file_type|upper }}</span></td>
+                            <td style="font-size:0.82rem;">
+                                {% if f.file_size %}{{ (f.file_size / 1024)|round(1) }} KB{% else %}—{% endif %}
+                            </td>
+                            <td style="font-size:0.8rem;">{{ f.uploaded_at.strftime('%b %d, %Y') }}</td>
+                            <td class="text-end">
+                                <a href="{{ url_for('files.download_file', file_id=f.id) }}"
+                                   class="btn btn-outline-secondary btn-sm" title="Download">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                                <form method="POST"
+                                      action="{{ url_for('files.delete_file', file_id=f.id) }}"
+                                      class="d-inline"
+                                      onsubmit="return confirm('Delete this file?')">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted mb-0" style="font-size:0.85rem;">No documents uploaded yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

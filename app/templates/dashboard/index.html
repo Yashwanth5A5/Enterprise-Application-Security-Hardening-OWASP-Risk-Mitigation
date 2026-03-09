@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-grid-1x2 me-2 text-warning"></i>Dashboard</h1>
+        <div class="text-muted" style="font-size:0.82rem; margin-top:3px;">
+            Overview · Employee Management Portal
+        </div>
+    </div>
+    <div class="text-muted" style="font-size:0.8rem;">
+        <i class="bi bi-clock me-1"></i>
+        <span id="current-time"></span>
+    </div>
+</div>
+
+<!-- ===== STAT CARDS ===== -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+            <div>
+                <div class="stat-value">{{ total_employees }}</div>
+                <div class="stat-label">Active Employees</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="bi bi-building"></i></div>
+            <div>
+                <div class="stat-value">{{ total_departments }}</div>
+                <div class="stat-label">Departments</div>
+            </div>
+        </div>
+    </div>
+    {% if current_user.is_admin() %}
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="bi bi-person-badge"></i></div>
+            <div>
+                <div class="stat-value">{{ total_users }}</div>
+                <div class="stat-label">Portal Users</div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#1e3a5f;"><i class="bi bi-shield-check"></i></div>
+            <div>
+                <div class="stat-value" style="font-size:1rem; padding-top:4px;">Read Access</div>
+                <div class="stat-label">Your Permission Level</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ===== MAIN GRID ===== -->
+<div class="row g-3">
+
+    <!-- Department Summary -->
+    <div class="col-md-5">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-building me-2 text-warning"></i>Employees by Department</span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Department</th>
+                            <th class="text-end">Headcount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dept in dept_stats %}
+                        <tr>
+                            <td>{{ dept.name }}</td>
+                            <td class="text-end">
+                                <span class="badge bg-secondary" style="font-family:'IBM Plex Mono',monospace;">
+                                    {{ dept.count }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Employees -->
+    <div class="col-md-7">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-person-lines-fill me-2 text-warning"></i>Recently Added Employees</span>
+                <a href="{{ url_for('employees.list_employees') }}" class="btn btn-sm btn-outline-secondary" style="font-size:0.75rem;">
+                    View All
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Title</th>
+                            <th>Department</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in recent_employees %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('employees.view_employee', employee_id=emp.id) }}"
+                                   class="text-decoration-none fw-500">
+                                    {{ emp.full_name }}
+                                </a>
+                            </td>
+                            <td class="text-muted">{{ emp.job_title or '—' }}</td>
+                            <td>
+                                {% if emp.department %}
+                                <span class="badge" style="background:#e8f0fe; color:#1a3a6b; font-weight:500;">
+                                    {{ emp.department.name }}
+                                </span>
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Log (Admin only) -->
+    {% if current_user.is_admin() and recent_logs %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-list-check me-2 text-warning"></i>Recent Audit Log
+                <span class="badge bg-danger ms-2" style="font-size:0.68rem;">ADMIN</span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0" style="font-size:0.82rem;">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>User ID</th>
+                            <th>Action</th>
+                            <th>Resource</th>
+                            <th>IP Address</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in recent_logs %}
+                        <tr>
+                            <td style="font-family:'IBM Plex Mono',monospace; font-size:0.78rem;">
+                                {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                            </td>
+                            <td>{{ log.user_id or '—' }}</td>
+                            <td><code style="font-size:0.78rem;">{{ log.action }}</code></td>
+                            <td>{{ log.resource or '—' }}</td>
+                            <td style="font-family:'IBM Plex Mono',monospace;">{{ log.ip_address or '—' }}</td>
+                            <td>
+                                <span class="badge {{ 'bg-success' if log.status == 'success' else 'bg-danger' }}">
+                                    {{ log.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateTime() {
+        const el = document.getElementById('current-time');
+        if (el) el.textContent = new Date().toLocaleString();
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+</script>
+{% endblock %}
